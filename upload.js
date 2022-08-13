@@ -6,7 +6,7 @@ const {
 // Load the .env file if it exists
 require("dotenv").config();
 
-const upload = async (directory, files) => {
+const upload = async (data) => {
   // Enter your storage account name and shared key
   const account = process.env.ACCOUNT_NAME || "";
   const accountKey = process.env.ACCOUNT_KEY || "";
@@ -25,19 +25,25 @@ const upload = async (directory, files) => {
   );
 
   // Create a container
-  const containerName = directory;
-  const containerClient = blobServiceClient.getContainerClient(containerName);
+  // const containerName = "docs";
+  const containerClient = blobServiceClient.getContainerClient(
+    data.environment
+  );
 
   await containerClient.createIfNotExists({
     access: "container",
   });
-  console.log(`Create container ${containerName} successfully`);
+  console.log(`Create container ${data.environment} successfully`);
 
   const promises = [];
-  for (const file of files) {
-    const blockBlobClient = containerClient.getBlockBlobClient(file.name);
-    const matches = file.data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-    const buffer = new Buffer(matches[2], "base64");
+  for (const file of data.files) {
+    const blockBlobClient = containerClient.getBlockBlobClient(
+      `${data.processor}/${data.holderId}/${file.name}`
+    );
+    // const matches = file.data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    // const buffer = new Buffer(matches[2], "base64");
+
+    const buffer = new Buffer(file.image, "base64");
 
     promises.push(blockBlobClient.upload(buffer, buffer.byteLength));
   }
